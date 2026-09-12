@@ -1,0 +1,37 @@
+name: Build firmware
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build
+        run: pio run -e esp32dev
+
+      - name: Prepare firmware
+        run: |
+          mkdir -p firmware-out
+          cp .pio/build/esp32dev/firmware.bin firmware-out/termostat-roznicowy-app.bin
+          cp .pio/build/esp32dev/bootloader.bin firmware-out/bootloader.bin
+          cp .pio/build/esp32dev/partitions.bin firmware-out/partitions.bin
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: termostat-roznicowy-firmware
+          path: firmware-out/
