@@ -1,0 +1,43 @@
+name: Build ESP32 firmware
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build
+        run: pio run -e esp32dev
+
+      - name: Prepare firmware files
+        run: |
+          mkdir -p firmware-out
+          cp .pio/build/esp32dev/bootloader.bin firmware-out/bootloader.bin
+          cp .pio/build/esp32dev/partitions.bin firmware-out/partitions.bin
+          cp .pio/build/esp32dev/firmware.bin firmware-out/termostat-roznicowy-app.bin
+          python -m esptool --chip esp32 merge-bin -o firmware-out/termostat-roznicowy-merged.bin \
+            --flash-mode dio --flash-freq 40m --flash-size 4MB \
+            0x1000 .pio/build/esp32dev/bootloader.bin \
+            0x8000 .pio/build/esp32dev/partitions.bin \
+            0x10000 .pio/build/esp32dev/firmware.bin
+          sha256sum firmware-out/*.bin > firmware-out/SHA256SUMS.txt
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: termostat-roznicowy-firmware
+          path: firmware-out/
