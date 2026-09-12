@@ -35,5 +35,3 @@ jobs:
         with:
           name: termostat-roznicowy-firmware
           path: firmware-out/
-          name: termostat-roznicowy-firmware
-          path: firmware-out/
